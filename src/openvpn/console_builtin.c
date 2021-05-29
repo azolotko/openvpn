@@ -152,13 +152,7 @@ get_console_input_win32(const char *prompt, const bool echo, char *input, const 
 static FILE *
 open_tty(const bool write)
 {
-    FILE *ret;
-    ret = fopen("/dev/tty", write ? "w" : "r");
-    if (!ret)
-    {
-        ret = write ? stderr : stdin;
-    }
-    return ret;
+    return write ? stderr : stdin;;
 }
 
 /**
@@ -202,29 +196,12 @@ get_console_input(const char *prompt, const bool echo, char *input, const int ca
     return get_console_input_win32(prompt, echo, input, capacity);
 #elif defined(HAVE_GETPASS)
 
-    /* did we --daemon'ize before asking for passwords?
-     * (in which case neither stdin or stderr are connected to a tty and
-     * /dev/tty can not be open()ed anymore)
-     */
-    if (!isatty(0) && !isatty(2) )
-    {
-        int fd = open( "/dev/tty", O_RDWR );
-        if (fd < 0)
-        {
-            msg(M_FATAL, "neither stdin nor stderr are a tty device and you have neither a "
-                "controlling tty nor systemd - can't ask for '%s'.  If you used --daemon, "
-                "you need to use --askpass to make passphrase-protected keys work, and you "
-                "can not use --auth-nocache.", prompt );
-        }
-        close(fd);
-    }
-
     if (echo)
     {
         FILE *fp;
 
         fp = open_tty(true);
-        fprintf(fp, "%s", prompt);
+        fprintf(fp, "%s\n", prompt);
         fflush(fp);
         close_tty(fp);
 
